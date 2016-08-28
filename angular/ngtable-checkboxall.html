@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link href="//cdn.bootcss.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div ng-app="myApp" class="container-fluid">
+    <script type="text/ng-template" id="headerCheckbox.html">
+        <input type="checkbox" ng-model="demo.checkboxes.checked" class="select-all" value="" />
+    </script>
+
+    <div class="row">
+        <div class="col-md-6" ng-controller="index as demo">
+            <h3>ngTable-checkbox all demo</h3>
+            <table ng-table="demo.tableParams" class="table table-condensed table-bordered table-striped">
+                <colgroup>
+                    <col width="5%"/>
+                    <col width="55%"/>
+                    <col width="20%"/>
+                    <col width="20%"/>
+                </colgroup>
+                <tr ng-repeat="row in $data">
+                    <td header="'headerCheckbox.html'"><input type="checkbox" ng-model="demo.checkboxes.items[row.id]" /></td>
+                    <td title="'Name'">{{row.name}}</td>
+                    <td title="'Age'">{{row.age}}</td>
+                    <td title="'Money'">{{row.money}}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+<script src="//cdn.bootcss.com/angular.js/1.4.7/angular.min.js"></script>
+<script src="ng-table.js"></script>
+<script>
+var App = angular.module("myApp", ["ngTable"]);
+
+App.controller("index", ['$scope', '$rootScope', 'NgTableParams',
+    function($scope, $rootScope, NgTableParams) {
+        /*
+         * current:                 列表当前页
+         * current_count:           列表当前页显示条数
+         * self.checkboxes.checked: 全选
+         * self.checkboxes.items:   当前选中个数用json形式保存
+         * simpleList:              表格数据
+         * */
+        $rootScope.current = 1;
+        $rootScope.current_count = 5;
+        var self = this,
+                simpleList = [
+                    {"id": 1, "name": "Nissim", "age": 41, "money": 454},
+                    {"id": 2, "name": "Mariko", "age": 10, "money": -100},
+                    {"id": 3, "name": "Mark", "age": 39, "money": 291},
+                    {"id": 4, "name": "Allen", "age": 85, "money": 871},
+                    {"id": 5, "name": "Dustin", "age": 10, "money": 378},
+                    {"id": 6, "name": "Macon", "age": 9, "money": 128},
+                    {"id": 7, "name": "Ezra", "age": 78, "money": 11},
+                    {"id": 8, "name": "Fiona", "age": 87, "money": 285},
+                    {"id": 9, "name": "Ira", "age": 7, "money": 816},
+                    {"id": 10, "name": "Barbara", "age": 46, "money": 44},
+                    {"id": 11, "name": "Lydia", "age": 56, "money": 494},
+                    {"id": 12, "name": "Carlos", "age": 80, "money": 193}
+                ];
+        self.checkboxes = {
+            checked: false,
+            items: {}
+        };
+
+        self.tableParams = new NgTableParams(
+                {count: 5},
+                {counts: [5, 10, 15], dataset: simpleList}
+        );
+
+        // watch 全选
+        $scope.$watch(function() {
+            return self.checkboxes.checked;
+        }, function(value) {
+            var total = ($rootScope.current_count * $rootScope.current > simpleList.length) ? simpleList.length : ($rootScope.current_count * $rootScope.current);
+            angular.forEach(simpleList, function(data, index, array) {
+                if (index >= ($rootScope.current - 1) * $rootScope.current_count && index < total) {
+                    self.checkboxes.items[array[index].id] = value;
+                }
+            });
+        });
+
+        // watch checkboxes.items
+        $scope.$watch(function() {
+            return self.checkboxes.items;
+        }, function(values) {
+            /**
+             * checked:   选中个数
+             * unchecked：未选中个数
+             * total：    当前页总个数
+             * length:    当前页范围
+             */
+            var checked = 0,
+                    unchecked = 0,
+                    total = ($rootScope.current_count * $rootScope.current > simpleList.length) ? simpleList.length - ($rootScope.current - 1) * $rootScope.current_count
+                            : $rootScope.current_count,
+                    length = ($rootScope.current_count * $rootScope.current > simpleList.length) ? simpleList.length : ($rootScope.current_count * $rootScope.current);
+
+            angular.forEach(simpleList, function(data, index, array) {
+                if (index >= ($rootScope.current - 1) * $rootScope.current_count && index < length) {
+                    checked   +=  (self.checkboxes.items[array[index].id]) || 0;
+                    unchecked += (!self.checkboxes.items[array[index].id]) || 0;
+                }
+            });
+
+            if ((unchecked == 0) || (checked == 0)) {
+                self.checkboxes.checked = (checked == total);
+            }
+
+            // grayed checkbox
+            angular.element(document.getElementsByClassName("select-all")).prop("indeterminate", (checked != 0 && unchecked != 0));
+        }, true);
+
+        // watch 分页
+        $scope.$watch(function() {
+            return $rootScope.current;
+        }, function(newValue, oldValue) {
+            if (newValue != oldValue) {
+                self.checkboxes.checked = false;
+                self.checkboxes.items = {};
+            }
+        });
+
+        // watch 当前页显示条数
+        $scope.$watch(function() {
+            return $rootScope.current_count;
+        }, function(newValue, oldValue) {
+            if (newValue != oldValue) {
+                self.checkboxes.checked = false;
+                self.checkboxes.items = {};
+            }
+        });
+    }
+]);
+</script>
+</html>
